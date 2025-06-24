@@ -1,9 +1,10 @@
 import tkinter as tk
+import customtkinter as ctk
 from tkinter import scrolledtext, messagebox
+from tkinter import filedialog
 import ply.lex as lex
 import ply.yacc as yacc
-import sys
-import io
+import sys, io
 
 # ----------- LEXER -----------
 keywords = {
@@ -168,7 +169,6 @@ def p_error(p):
 
 parser = yacc.yacc()
 
-# ----------- GUI -----------
 def translate():
     try:
         pseudocode = input_text.get("1.0", tk.END)
@@ -194,25 +194,148 @@ def execute():
     finally:
         sys.stdout=old_stdout   
 
+def copy_output_code():
+    app.clipboard_clear()
+    app.clipboard_append(output_text.get("1.0", tk.END).strip())
+    copy_btn.configure(text="✅ Copied!")
+    app.after(1500, lambda: copy_btn.configure(text="📋 Copy Code"))
 
-root = tk.Tk()
-root.title("Pseudocode Compiler")
-root.configure(bg="#f5f5f5")
+def export_python_code():
+    code = output_text.get("1.0", tk.END).strip()
+    if not code:
+        messagebox.showinfo("Empty Output", "There is no code to export.")
+        return
+    filepath = filedialog.asksaveasfilename(defaultextension=".py",
+                                             filetypes=[("Python Files", "*.py")],
+                                             title="Save Python Code")
+    if filepath:
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(code)
+        messagebox.showinfo("Success", f"Code saved to:\n{filepath}")
 
-tk.Label(root, text="Pseudocode Input", font=("Arial", 12), bg="#f5f5f5").pack(pady=(10, 0))
-input_text = scrolledtext.ScrolledText(root, height=10, width=80, font=("Consolas", 11), bg="#ffffff", bd=1, relief="solid")
-input_text.pack(padx=10, pady=5)
+def clear_all():
+    input_text.delete("1.0", tk.END)
+    output_text.delete("1.0", tk.END)
+    result_text.delete("1.0", tk.END)
 
-tk.Button(root, text="Compile to Python", command=translate, bg="#4caf50", fg="white", font=("Arial", 11)).pack(pady=5)
 
-tk.Label(root, text="Generated Python Code", font=("Arial", 12), bg="#f5f5f5").pack()
-output_text = scrolledtext.ScrolledText(root, height=10, width=80, font=("Consolas", 11), bg="#f0f0f0", bd=1, relief="solid")
-output_text.pack(padx=10, pady=5)
+# ---------------- GUI Setup ----------------
+def launch_main_app():
+    global input_text, output_text, result_text, copy_btn
+    ctk.set_appearance_mode("Dark")
+    ctk.set_default_color_theme("dark-blue")
 
-tk.Button(root, text="Execute Python Code", command=execute, bg="#2196f3", fg="white", font=("Arial", 11)).pack(pady=5)
+    app = ctk.CTk()
+    app.title("🧠 Pseudocode to Python Compiler")
+    app.after(100, lambda: app.state("zoomed"))
+    app.geometry("950x800")
+    app.resizable(False, False)
 
-tk.Label(root, text="Program Output", font=("Arial", 12), bg="#f5f5f5").pack()
-result_text = scrolledtext.ScrolledText(root, height=8, width=80, font=("Consolas", 11), bg="#e8e8e8", bd=1, relief="solid")
-result_text.pack(padx=10, pady=5)
+    title_font = ctk.CTkFont("Segoe UI", 22, weight="bold")
+    label_font = ctk.CTkFont("Segoe UI", 15)
+    code_font = ("Consolas", 13)
 
-root.mainloop()
+
+    top_frame = ctk.CTkFrame(app, fg_color="#1f1f1f")
+    top_frame.pack(fill="x", pady=(0, 10))
+    ctk.CTkLabel(top_frame, text="🧠  Pseudocode to Python Compiler", font=title_font, text_color="#00e0ff").pack(pady=20)
+
+
+    input_card = ctk.CTkFrame(app, corner_radius=12, fg_color="#2a2a2a")
+    input_card.pack(padx=30, pady=10, fill="x")
+    ctk.CTkLabel(input_card, text="Pseudocode Input", font=label_font).pack(anchor="w", padx=15, pady=(10, 5))
+    input_text = ctk.CTkTextbox(input_card, height=160, font=code_font, corner_radius=10)
+    input_text.pack(padx=15, pady=(0, 15), fill="x")
+
+    compile_btn = ctk.CTkButton(app, text="⚙️ Compile to Python", command=translate, font=label_font,
+                                fg_color="#388e3c", hover_color="#00e676", corner_radius=8)
+    compile_btn.pack(pady=(0, 15))
+
+    clear_btn = ctk.CTkButton(app, text="🔁 Clear All", command=clear_all, fg_color="#a33", hover_color="#d55")
+    clear_btn.pack(pady=(0, 5))
+
+    output_card = ctk.CTkFrame(app, corner_radius=12, fg_color="#2a2a2a")
+    output_card.pack(padx=30, pady=10, fill="x")
+    ctk.CTkLabel(output_card, text="Generated Python Code", font=label_font).pack(anchor="w", padx=15, pady=(10, 5))
+    output_text = ctk.CTkTextbox(output_card, height=160, font=code_font, corner_radius=10)
+    output_text.pack(padx=15, pady=(0, 15), fill="x")
+
+    copy_btn = ctk.CTkButton(output_card, text="📋 Copy Code", command=copy_output_code,
+                            font=label_font, fg_color="#444", hover_color="#555", corner_radius=8, width=120)
+    copy_btn.pack(pady=(0, 10), padx=15, anchor="e")
+
+
+    execute_btn = ctk.CTkButton(app, text="▶️ Execute Python Code", command=execute, font=label_font,
+                                fg_color="#2962ff", hover_color="#448aff", corner_radius=8)
+    execute_btn.pack(pady=(0, 15))
+
+    export_btn = ctk.CTkButton(output_card, text="💾 Export to .py", command=export_python_code,
+                            font=label_font, fg_color="#555", hover_color="#666", corner_radius=8)
+    export_btn.pack(pady=(0, 15), padx=15, anchor="e")
+
+
+
+
+    result_card = ctk.CTkFrame(app, corner_radius=12, fg_color="#2a2a2a")
+    result_card.pack(padx=30, pady=10, fill="x")
+    ctk.CTkLabel(result_card, text="Program Output", font=label_font).pack(anchor="w", padx=15, pady=(10, 5))
+    result_text = ctk.CTkTextbox(result_card, height=120, font=code_font, corner_radius=10)
+    result_text.pack(padx=15, pady=(0, 15), fill="x")
+
+    def maximize():
+        app.state("zoomed")
+
+    app.after(100, maximize)  
+    app.mainloop()
+
+def show_welcome():
+    welcome = ctk.CTk()
+    welcome.title("Welcome")
+    welcome.after(100, lambda: welcome.state("zoomed")) 
+    welcome.resizable(False, False)
+
+
+    ctk.CTkLabel(welcome, text="🧠 Welcome to Pseudocode Compiler", 
+                font=ctk.CTkFont(size=30, weight="bold")).pack(pady=20)
+
+    ctk.CTkLabel(welcome, text="Convert simple structured pseudocode into executable Python code.\n", 
+                font=ctk.CTkFont(size=22), wraplength=500).pack()
+    
+    ctk.CTkButton(
+    welcome, 
+    text="🚀 Start Compiler", 
+    command=lambda: [welcome.destroy(), launch_main_app()],
+    fg_color="#2962ff", 
+    hover_color="#448aff", 
+    font=ctk.CTkFont(size=18, weight="bold"),  # Bigger font
+    corner_radius=10, 
+    width=220, 
+    height=50 ).pack(pady=30)
+
+    # Syntax Guide Section
+    syntax_frame = ctk.CTkFrame(welcome, corner_radius=10, fg_color="#2a2a2a")
+    syntax_frame.pack(padx=30, pady=10, fill="both", expand=True)
+
+    syntax_text = """
+📘 Pseudocode Syntax Guide:
+• set x to 5
+• print x
+• input name
+• if x > 10 then
+    print "big"
+end
+• while x < 5 do
+    set x to x + 1
+end
+• function greet()
+    print "Hello"
+end
+• call greet()
+• return x
+"""
+    ctk.CTkLabel(syntax_frame, text=syntax_text, justify="left", 
+                font=("Consolas", 26)).pack(padx=20, pady=20)
+
+    welcome.mainloop()
+
+show_welcome()
