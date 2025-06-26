@@ -45,8 +45,8 @@ def t_STRING(t):
 
 
 def t_NUMBER(t):
-    r'\d+'
-    t.value = int(t.value)
+    r'-?\d+(\.\d+)?'
+    t.value = float(t.value) if '.' in t.value else int(t.value)
     return t
 
 
@@ -76,7 +76,7 @@ def t_error(t):
 
 lexer = lex.lex()
 
-# ----------- PARSER -----------
+# PARSER
 precedence = (
     ('left', 'PLUS', 'MINUS'),
     ('left', 'TIMES', 'DIVIDE'),
@@ -221,7 +221,7 @@ def clear_all():
 
 # ---------------- GUI Setup ----------------
 def launch_main_app():
-    global input_text, output_text, result_text, copy_btn
+    global input_text, output_text, result_text, copy_btn, app
     ctk.set_appearance_mode("Dark")
     ctk.set_default_color_theme("dark-blue")
 
@@ -238,7 +238,7 @@ def launch_main_app():
 
     top_frame = ctk.CTkFrame(app, fg_color="#1f1f1f")
     top_frame.pack(fill="x", pady=(0, 10))
-    ctk.CTkLabel(top_frame, text="🧠  Pseudocode to Python Compiler", font=title_font, text_color="#00e0ff").pack(pady=20)
+    ctk.CTkLabel(top_frame, text="🧠  Pseudocode to Python Compiler", font=title_font, text_color="#00ff22").pack(pady=20)
 
 
     input_card = ctk.CTkFrame(app, corner_radius=12, fg_color="#2a2a2a")
@@ -320,7 +320,6 @@ def show_welcome():
 📘 Pseudocode Syntax Guide:
 • set x to 5
 • print x
-• input name
 • if x > 10 then
     print "big"
 end
